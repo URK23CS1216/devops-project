@@ -114,7 +114,7 @@ jobs:
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             COMMIT_SHA=${{ github.sha }}
-            IMAGE_TAG=sha-${{ github.sha }}
+            IMAGE_TAG=${{ steps.meta.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -133,7 +133,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ env.DOCKER_IMAGE }}:sha-${{ github.sha }}'
+          image-ref: '${{ env.DOCKER_IMAGE }}:${{ needs.build-and-push.outputs.image_tag }}'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -161,7 +161,7 @@ jobs:
 
       - name: Update Helm values with new image tag
         run: |
-          NEW_TAG="sha-${{ github.sha }}"
+          NEW_TAG="${{ needs.build-and-push.outputs.image_tag }}"
           sed -i "s|tag:.*|tag: \"${NEW_TAG}\"|" helm/devops-demo/values.yaml
           echo "Updated image tag to: ${NEW_TAG}"
 
