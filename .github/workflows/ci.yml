@@ -130,6 +130,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Pull image for scanning
+        run: docker pull ${{ env.DOCKER_IMAGE }}:${{ needs.build-and-push.outputs.image_tag }}
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -139,8 +142,10 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
 
+
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
+
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
