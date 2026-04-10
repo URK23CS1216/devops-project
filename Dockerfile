@@ -34,7 +34,8 @@ LABEL org.opencontainers.image.title="devops-demo"
 LABEL org.opencontainers.image.version="1.0.0"
 
 # Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init=1.2.5-r3
+
 
 # Security: create non-root user
 RUN addgroup -g 1001 -S appgroup && \
