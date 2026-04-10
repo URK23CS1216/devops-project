@@ -1,0 +1,14 @@
+# Grafana dashboard provisioning for docker-compose
+apiVersion: 1
+
+providers:
+  - name: 'DevOps Demo'
+    orgId: 1
+    folder: 'DevOps Demo'
+    type: file
+    disableDeletion: true
+    editable: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

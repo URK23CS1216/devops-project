@@ -1,0 +1,38 @@
+══════════════════════════════════════════════
+  🚀 DevOps Demo has been deployed!
+══════════════════════════════════════════════
+
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+Version:   {{ .Chart.AppVersion }}
+
+{{- if .Values.ingress.enabled }}
+
+📡 Access the application:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else }}
+
+📡 Access the application via port-forward:
+  kubectl port-forward svc/{{ include "devops-demo.fullname" . }} 8080:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+  Then open: http://localhost:8080
+{{- end }}
+
+🔗 Useful endpoints:
+  Dashboard:  /
+  Health:     /api/health
+  Info:       /api/info
+  Metrics:    /metrics
+
+📊 Check deployment status:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "devops-demo.name" . }}
+  kubectl rollout status deployment/{{ include "devops-demo.fullname" . }} -n {{ .Release.Namespace }}
+
+{{- if .Values.autoscaling.enabled }}
+
+⚡ Autoscaling is ENABLED:
+  Min: {{ .Values.autoscaling.minReplicas }} | Max: {{ .Values.autoscaling.maxReplicas }}
+  CPU target:    {{ .Values.autoscaling.targetCPUUtilizationPercentage }}%
+  Memory target: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}%
+{{- end }}

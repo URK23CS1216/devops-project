@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DevOps Demo - Production-grade deployment pipeline dashboard">
+  <title>DevOps Demo — Pipeline Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --bg-card-hover: rgba(30, 41, 59, 0.8);
+      --border: rgba(99, 102, 241, 0.15);
+      --border-hover: rgba(99, 102, 241, 0.4);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-indigo: #6366f1;
+      --accent-purple: #a855f7;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --gradient-primary: linear-gradient(135deg, #6366f1, #a855f7);
+      --gradient-success: linear-gradient(135deg, #10b981, #06b6d4);
+      --gradient-warm: linear-gradient(135deg, #f59e0b, #f43f5e);
+      --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(99, 102, 241, 0.08), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(168, 85, 247, 0.06), transparent),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.05), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    .header__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--accent-indigo);
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .header__badge .pulse {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-emerald);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .header__title {
+      font-size: 3rem;
+      font-weight: 800;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .header__subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 3rem;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+      flex-wrap: wrap;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 1.2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .status-item:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.green { background: var(--accent-emerald); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+    .status-dot.blue { background: var(--accent-cyan); box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
+    .status-dot.purple { background: var(--accent-purple); box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+
+    .status-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
+
+    /* Cards Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      backdrop-filter: blur(12px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card--indigo::before { background: var(--gradient-primary); }
+    .card--emerald::before { background: var(--gradient-success); }
+    .card--amber::before { background: var(--gradient-warm); }
+    .card--cyan::before { background: linear-gradient(135deg, #06b6d4, #6366f1); }
+
+    .card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .card__title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .card__icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      font-size: 1.2rem;
+    }
+
+    .card__icon--indigo { background: rgba(99, 102, 241, 0.15); }
+    .card__icon--emerald { background: rgba(16, 185, 129, 0.15); }
+    .card__icon--amber { background: rgba(245, 158, 11, 0.15); }
+    .card__icon--cyan { background: rgba(6, 182, 212, 0.15); }
+
+    .card__badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .badge--green { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+    .badge--blue { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
+    .badge--amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+
+    /* Metrics */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .metric {
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.3s ease;
+    }
+
+    .metric:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .metric__value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric__value--indigo { color: var(--accent-indigo); }
+    .metric__value--emerald { color: var(--accent-emerald); }
+    .metric__value--cyan { color: var(--accent-cyan); }
+    .metric__value--amber { color: var(--accent-amber); }
+
+    .metric__label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Pipeline stages */
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .pipeline__stage {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.3s ease;
+    }
+
+    .pipeline__stage:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .pipeline__number {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent-indigo);
+      flex-shrink: 0;
+    }
+
+    .pipeline__stage-name { font-size: 0.9rem; font-weight: 500; flex: 1; }
+    .pipeline__status { font-size: 0.8rem; font-weight: 600; }
+    .pipeline__status.pass { color: var(--accent-emerald); }
+    .pipeline__status.running { color: var(--accent-amber); animation: pulse 1.5s infinite; }
+
+    /* Endpoint list */
+    .endpoint-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .endpoint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .endpoint:hover {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: rgba(99, 102, 241, 0.2);
+    }
+
+    .endpoint__method {
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      letter-spacing: 0.05em;
+      margin-right: 0.75rem;
+    }
+
+    .endpoint__path { font-size: 0.88rem; font-weight: 500; font-family: 'Courier New', monospace; flex: 1; }
+    .endpoint__arrow { color: var(--text-muted); font-size: 0.9rem; transition: transform 0.3s ease; }
+    .endpoint:hover .endpoint__arrow { transform: translateX(4px); color: var(--accent-indigo); }
+
+    /* Tech stack */
+    .tech-stack { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+    .tech-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.3s ease;
+    }
+
+    .tech-tag:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .tech-tag__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      animation: fadeInUp 0.8s ease-out 0.8s both;
+    }
+
+    .footer a {
+      color: var(--accent-indigo);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .footer a:hover { text-decoration: underline; }
+
+    /* Animations */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .card { animation: fadeInUp 0.6s ease-out both; }
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    .card:nth-child(4) { animation-delay: 0.4s; }
+    .card:nth-child(5) { animation-delay: 0.5s; }
+    .card:nth-child(6) { animation-delay: 0.6s; }
+
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      .header__title { font-size: 2rem; }
+      .grid { grid-template-columns: 1fr; }
+      .status-bar { gap: 0.75rem; }
+      .metrics-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Live update flash */
+    .flash { animation: flash 0.5s ease; }
+    @keyframes flash {
+      0% { background: rgba(99, 102, 241, 0.1); }
+      100% { background: transparent; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header__badge">
+        <span class="pulse"></span>
+        Live Dashboard
+      </div>
+      <h1 class="header__title">DevOps Pipeline</h1>
+      <p class="header__subtitle">
+        End-to-end CI/CD pipeline with Kubernetes orchestration, GitOps delivery, and full-stack observability
+      </p>
+    </header>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-dot green"></span>
+        <span class="status-label" id="app-status">Application Healthy</span>
+      </div>
+      <div class="status-item">
+        <span class="status-dot blue"></span>
+        <span class="status-label" id="cluster-status">Cluster Connected</span>
+      </div>
+      <div class="status-item">
+        <span class="status-dot purple"></span>
+        <span class="status-label" id="pipeline-status">Pipeline Active</span>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid">
+      <!-- App Health Card -->
+      <div class="card card--emerald">
+        <div class="card__header">
+          <div class="card__title">
+            <div class="card__icon card__icon--emerald">💚</div>
+            Application Health
+          </div>
+          <span class="card__badge badge--green" id="health-badge">HEALTHY</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric__value metric__value--emerald" id="uptime">0s</div>
+            <div class="metric__label">Uptime</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--cyan" id="memory">0MB</div>
+            <div class="metric__label">Memory (RSS)</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--indigo" id="heap">0MB</div>
+            <div class="metric__label">Heap Used</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--amber" id="version">1.0.0</div>
+            <div class="metric__label">App Version</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CI/CD Pipeline Card -->
+      <div class="card card--indigo">
+        <div class="card__header">
+          <div class="card__title">
+            <div class="card__icon card__icon--indigo">🔄</div>
+            CI/CD Pipeline
+          </div>
+          <span class="card__badge badge--green">PASSING</span>
+        </div>
+        <div class="pipeline">
+          <div class="pipeline__stage">
+            <span class="pipeline__number">1</span>
+            <span class="pipeline__stage-name">Lint & Validate</span>
+            <span class="pipeline__status pass">✓ Pass</span>
+          </div>
+          <div class="pipeline__stage">
+            <span class="pipeline__number">2</span>
+            <span class="pipeline__stage-name">Unit Tests</span>
+            <span class="pipeline__status pass">✓ Pass</span>
+          </div>
+          <div class="pipeline__stage">
+            <span class="pipeline__number">3</span>
+            <span class="pipeline__stage-name">Docker Build & Push</span>
+            <span class="pipeline__status pass">✓ Pass</span>
+          </div>
+          <div class="pipeline__stage">
+            <span class="pipeline__number">4</span>
+            <span class="pipeline__stage-name">Security Scan (Trivy)</span>
+            <span class="pipeline__status pass">✓ Pass</span>
+          </div>
+          <div class="pipeline__stage">
+            <span class="pipeline__number">5</span>
+            <span class="pipeline__stage-name">Deploy to Kubernetes</span>
+            <span class="pipeline__status pass">✓ Synced</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kubernetes Status Card -->
+      <div class="card card--cyan">
+        <div class="card__header">
+          <div class="card__title">
+            <div class="card__icon card__icon--cyan">☸️</div>
+            Kubernetes Cluster
+          </div>
+          <span class="card__badge badge--blue">RUNNING</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric__value metric__value--cyan" id="pods">3/3</div>
+            <div class="metric__label">Pods Ready</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--emerald" id="replicas">3</div>
+            <div class="metric__label">Replicas</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--indigo" id="cpu-usage">24%</div>
+            <div class="metric__label">CPU Usage</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--amber" id="mem-usage">41%</div>
+            <div class="metric__label">Memory Usage</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deployment Info Card -->
+      <div class="card card--amber">
+        <div class="card__header">
+          <div class="card__title">
+            <div class="card__icon card__icon--amber">🚀</div>
+            Deployment
+          </div>
+          <span class="card__badge badge--amber">ROLLING</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric__value metric__value--amber" id="strategy">Rolling</div>
+            <div class="metric__label">Strategy</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--emerald" id="image-tag">latest</div>
+            <div class="metric__label">Image Tag</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--indigo" id="namespace">devops-demo</div>
+            <div class="metric__label">Namespace</div>
+          </div>
+          <div class="metric">
+            <div class="metric__value metric__value--cyan" id="hostname">—</div>
+            <div class="metric__label">Pod Hostname</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- API Endpoints Card -->
+      <div class="card card--indigo">
+        <div class="card__header">
+          <div class="card__title">
+            <div class="card__icon card__icon--indigo">🌐</div>
+            API Endpoints
+          </div>
+        </div>
+        <div class="endpoint-list">
+          <a href="/api/health" class="endpoint" id="endpoint-health">
+            <span class="endpoint__method">GET</span>
+            <span class="endpoint__path">/api/health</span>
+            <span class="endpoint__arrow">→</span>
+          </a>
+          <a href="/api/health/ready" class="endpoint" id="endpoint-ready">
+            <span class="endpoint__method">GET</span>
+            <span class="endpoint__path">/api/health/ready</span>
+            <span class="endpoint__arrow">→</span>
+          </a>
+          <a href="/api/health/live" class="endpoint" id="endpoint-live">
+            <span class="endpoint__method">GET</span>
+            <span class="endpoint__path">/api/health/live</span>
+            <span class="endpoint__arrow">→</span>
+          </a>
+          <a href="/api/info" class="endpoint" id="endpoint-info">
+            <span class="endpoint__method">GET</span>
+            <span class="endpoint__path">/api/info</span>
+            <span class="endpoint__arrow">→</span>
+          </a>
+          <a href="/metrics" class="endpoint" id="endpoint-metrics">
+            <span class="endpoint__method">GET</span>
+            <span class="endpoint__path">/metrics</span>
+            <span class="endpoint__arrow">→</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Tech Stack Card -->
+      <div class="card card--emerald">
+        <div class="card__header">
+          <div class="card__title">
+            <div class="card__icon card__icon--emerald">🛠️</div>
+            Tech Stack
+          </div>
+        </div>
+        <div class="tech-stack">
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#68a063"></span> Node.js</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#2496ed"></span> Docker</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#326ce5"></span> Kubernetes</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#0f9d58"></span> Helm</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#ef7b4d"></span> ArgoCD</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#e6522c"></span> Prometheus</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#f46800"></span> Grafana</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#2088ff"></span> GitHub Actions</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#4db33d"></span> Loki</div>
+          <div class="tech-tag"><span class="tech-tag__dot" style="background:#7b42bc"></span> Trivy</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>DevOps Demo v<span id="footer-version">1.0.0</span> · Built with
+        <a href="https://nodejs.org" target="_blank">Node.js</a> ·
+        Deployed via <a href="https://kubernetes.io" target="_blank">Kubernetes</a> ·
+        Monitored by <a href="https://prometheus.io" target="_blank">Prometheus</a>
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    // Live data fetching
+    async function fetchHealth() {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+
+        document.getElementById('uptime').textContent = data.uptimeFormatted;
+        document.getElementById('memory').textContent = data.checks.memory.rss;
+        document.getElementById('heap').textContent = data.checks.memory.heapUsed;
+        document.getElementById('health-badge').textContent = data.status === 'ok' ? 'HEALTHY' : 'DEGRADED';
+
+        // Flash animation on update
+        document.getElementById('uptime').closest('.metric').classList.add('flash');
+        setTimeout(() => {
+          document.getElementById('uptime').closest('.metric').classList.remove('flash');
+        }, 500);
+      } catch (err) {
+        document.getElementById('health-badge').textContent = 'ERROR';
+        document.getElementById('health-badge').className = 'card__badge badge--amber';
+      }
+    }
+
+    async function fetchInfo() {
+      try {
+        const res = await fetch('/api/info');
+        const data = await res.json();
+
+        document.getElementById('version').textContent = data.app.version;
+        document.getElementById('footer-version').textContent = data.app.version;
+        document.getElementById('hostname').textContent = data.host.hostname.substring(0, 12);
+        document.getElementById('image-tag').textContent = data.deploy.imageTag;
+      } catch (err) {
+        console.error('Failed to fetch info:', err);
+      }
+    }
+
+    // Initial fetch
+    fetchHealth();
+    fetchInfo();
+
+    // Refresh every 5 seconds
+    setInterval(fetchHealth, 5000);
+    setInterval(fetchInfo, 30000);
+  </script>
+</body>
+</html>

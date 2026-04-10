@@ -1,0 +1,241 @@
+﻿---
+# Source: devops-demo/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: devops-demo
+  labels:
+    helm.sh/chart: devops-demo-0.1.0
+    app.kubernetes.io/name: devops-demo
+    app.kubernetes.io/instance: devops-demo
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: false
+---
+# Source: devops-demo/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devops-demo-config
+  labels:
+    helm.sh/chart: devops-demo-0.1.0
+    app.kubernetes.io/name: devops-demo
+    app.kubernetes.io/instance: devops-demo
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  LOG_LEVEL: "debug"
+  NODE_ENV: "development"
+  PORT: "3000"
+---
+# Source: devops-demo/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-demo
+  labels:
+    helm.sh/chart: devops-demo-0.1.0
+    app.kubernetes.io/name: devops-demo
+    app.kubernetes.io/instance: devops-demo
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: devops-demo
+    app.kubernetes.io/instance: devops-demo
+---
+# Source: devops-demo/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-demo
+  labels:
+    helm.sh/chart: devops-demo-0.1.0
+    app.kubernetes.io/name: devops-demo
+    app.kubernetes.io/instance: devops-demo
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: devops-demo
+      app.kubernetes.io/instance: devops-demo
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  minReadySeconds: 10
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "3000"
+        prometheus.io/scrape: "true"
+        checksum/config: 4ab94df376fa9e37a18bd76b4f4f9ef496d31064c936f5afd0a343fae0f48208
+        checksum/secret: b28b353104eed2539af31200dadf858071a07a5378b1537c08d61ae79e516949
+      labels:
+        helm.sh/chart: devops-demo-0.1.0
+        app.kubernetes.io/name: devops-demo
+        app.kubernetes.io/instance: devops-demo
+        app.kubernetes.io/version: "1.0.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      serviceAccountName: devops-demo
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        fsGroup: 1001
+        runAsGroup: 1001
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - devops-demo
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+        - name: devops-demo
+          image: "your-dockerhub-username/devops-demo:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: devops-demo-config
+            - secretRef:
+                name: devops-demo-secrets
+                optional: true
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/health/live
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /api/health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          startupProbe:
+            failureThreshold: 10
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 0
+            periodSeconds: 3
+---
+# Source: devops-demo/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devops-demo
+  labels:
+    helm.sh/chart: devops-demo-0.1.0
+    app.kubernetes.io/name: devops-demo
+    app.kubernetes.io/instance: devops-demo
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "devops-demo.dev.local"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: devops-demo
+                port:
+                  name: http
+---
+# Source: devops-demo/templates/secret.yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: devops-demo-secrets
+  labels:
+    helm.sh/chart: devops-demo-0.1.0
+    app.kubernetes.io/name: devops-demo
+    app.kubernetes.io/instance: devops-demo
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  refreshInterval: "15s"
+  secretStoreRef:
+    name: devops-demo-vault-backend
+    kind: SecretStore
+  target:
+    name: devops-demo-secrets
+    creationPolicy: Owner
+  data:
+    - secretKey: API_KEY
+      remoteRef:
+        key: "devops-demo"
+        property: API_KEY
+    - secretKey: DB_PASSWORD
+      remoteRef:
+        key: "devops-demo"
+        property: DB_PASSWORD
+---
+# Source: devops-demo/templates/secret.yaml
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: devops-demo-vault-backend
+  labels:
+    helm.sh/chart: devops-demo-0.1.0
+    app.kubernetes.io/name: devops-demo
+    app.kubernetes.io/instance: devops-demo
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  provider:
+    vault:
+      server: "http://vault.vault.svc.cluster.local:8200"
+      path: "secret"
+      version: "v2"
+      auth:
+        tokenSecretRef:
+          name: "vault-token"
+          key: token

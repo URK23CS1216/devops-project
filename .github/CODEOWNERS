@@ -1,0 +1,24 @@
+# Code Owners — require review from these teams/users
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @your-org/devops-team
+
+# Application code
+/src/ @your-org/dev-team
+/tests/ @your-org/dev-team
+
+# CI/CD pipelines
+/.github/ @your-org/devops-team
+/Dockerfile @your-org/devops-team
+
+# Kubernetes & Helm
+/k8s/ @your-org/devops-team
+/helm/ @your-org/devops-team
+/argocd/ @your-org/devops-team
+
+# Monitoring
+/monitoring/ @your-org/sre-team
+
+# Security
+/security/ @your-org/security-team

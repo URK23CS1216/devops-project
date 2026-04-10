@@ -1,0 +1,35 @@
+# Trivy Scanner Configuration
+# Used in CI pipeline and local scans
+
+severity:
+  - CRITICAL
+  - HIGH
+
+# Vulnerability scanning
+vulnerability:
+  type:
+    - os
+    - library
+
+# Secret scanning
+secret:
+  config: {}
+
+# Ignore specific CVEs (add justification comments)
+ignoredVulnerabilities: []
+  # - id: CVE-XXXX-XXXXX
+  #   reason: "Not exploitable in our context"
+  #   expiry: "2025-12-31"
+
+# Output format options: table, json, sarif
+format: table
+
+# Exit code on findings (0 = don't fail, 1 = fail)
+exitCode: 1
+
+# Skip directories
+skipDirs:
+  - node_modules
+  - .git
+  - tests
+  - docs

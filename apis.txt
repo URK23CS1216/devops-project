@@ -1,0 +1,7 @@
+﻿NAME                     SHORTNAMES   APIVERSION                     NAMESPACED   KIND
+clusterexternalsecrets   ces          external-secrets.io/v1         false        ClusterExternalSecret
+clusterpushsecrets                    external-secrets.io/v1alpha1   false        ClusterPushSecret
+clustersecretstores      css          external-secrets.io/v1         false        ClusterSecretStore
+externalsecrets          es           external-secrets.io/v1         true         ExternalSecret
+pushsecrets              ps           external-secrets.io/v1alpha1   true         PushSecret
+secretstores             ss           external-secrets.io/v1         true         SecretStore

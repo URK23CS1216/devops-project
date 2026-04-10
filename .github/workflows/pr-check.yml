@@ -1,0 +1,35 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  validate:
+    name: 🔎 PR Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Tests
+        run: npm test
+        env:
+          NODE_ENV: test
+
+      - name: Helm lint
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm lint helm/devops-demo/

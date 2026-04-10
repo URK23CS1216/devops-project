@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: devops-demo
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: devops-pipeline
+spec:
+  description: DevOps Demo project — restricted deployment scope
+  # Source repos allowed
+  sourceRepos:
+    - https://github.com/your-org/devops-demo.git
+  # Destination clusters and namespaces
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: devops-demo
+  # Allowed cluster-scoped resources
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  # Allowed namespace-scoped resources
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: apps
+      kind: Deployment
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+  # Deny resources that shouldn't be managed
+  namespaceResourceBlacklist:
+    - group: ''
+      kind: LimitRange
+  # Orphaned resource monitoring
+  orphanedResources:
+    warn: true

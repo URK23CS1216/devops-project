@@ -1,0 +1,191 @@
+# ==============================================
+# DevOps Demo — Default Helm Values
+# ==============================================
+
+# -- Number of replicas
+replicaCount: 3
+
+image:
+  # -- Docker image repository
+  repository: aldanjoseph2006/devops-demo
+  # -- Image pull policy
+  pullPolicy: Always
+  # -- Image tag (overridden by CI pipeline)
+  tag: "latest"
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+# -- Override chart name
+nameOverride: ""
+# -- Override full name
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create a service account
+  create: true
+  # -- Automount API credentials
+  automount: false
+  # -- Annotations for the service account
+  annotations: {}
+  # -- Service account name (auto-generated if empty)
+  name: ""
+
+# -- Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3000"
+  prometheus.io/path: "/metrics"
+
+# -- Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  # -- Service type
+  type: ClusterIP
+  # -- Service port
+  port: 80
+  # -- Target port on the container
+  targetPort: 3000
+
+ingress:
+  # -- Enable ingress
+  enabled: true
+  # -- Ingress class name
+  className: nginx
+  # -- Ingress annotations
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  # -- Ingress hosts
+  hosts:
+    - host: devops-demo.local
+      paths:
+        - path: /
+          pathType: Prefix
+  # -- TLS configuration
+  tls: []
+
+# -- Container port
+containerPort: 3000
+
+# -- Resource requests and limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# -- Liveness probe configuration
+livenessProbe:
+  httpGet:
+    path: /api/health/live
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# -- Readiness probe configuration
+readinessProbe:
+  httpGet:
+    path: /api/health/ready
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# -- Startup probe configuration
+startupProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 0
+  periodSeconds: 3
+  failureThreshold: 10
+
+# -- Rolling update strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+# -- Minimum seconds a pod must be ready
+minReadySeconds: 10
+
+# -- Revision history limit
+revisionHistoryLimit: 5
+
+autoscaling:
+  # -- Enable HPA
+  enabled: true
+  # -- Minimum replicas
+  minReplicas: 2
+  # -- Maximum replicas
+  maxReplicas: 10
+  # -- Target CPU utilization
+  targetCPUUtilizationPercentage: 70
+  # -- Target memory utilization
+  targetMemoryUtilizationPercentage: 80
+
+# -- Pod anti-affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - devops-demo
+          topologyKey: kubernetes.io/hostname
+
+# -- Node selector
+nodeSelector: {}
+
+# -- Tolerations
+tolerations: []
+
+# -- ConfigMap data
+config:
+  NODE_ENV: "production"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+
+# -- External Secrets Configuration
+externalSecrets:
+  enabled: true
+  vaultServer: "http://vault.vault.svc.cluster.local:8200"
+  vaultPath: "secret"
+  vaultVersion: "v2"
+  tokenSecretName: "vault-token"
+  remoteSecretKey: "devops-demo"
+  keys:
+    - API_KEY
+    - DB_PASSWORD
+
+networkPolicy:
+  # -- Enable network policy
+  enabled: true
+
+# -- Termination grace period
+terminationGracePeriodSeconds: 30

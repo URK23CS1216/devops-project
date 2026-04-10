@@ -1,0 +1,109 @@
+# Prometheus Alerting Rules for DevOps Demo
+groups:
+  - name: devops-demo.rules
+    rules:
+      # ==========================================
+      # Pod Health
+      # ==========================================
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total{namespace="devops-demo"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash looping"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been restarting frequently."
+
+      - alert: PodNotReady
+        expr: kube_pod_status_ready{namespace="devops-demo", condition="true"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.pod }} is not ready"
+          description: "Pod {{ $labels.pod }} has been in a non-ready state for more than 5 minutes."
+
+      # ==========================================
+      # Resource Usage
+      # ==========================================
+      - alert: HighCPUUsage
+        expr: |
+          (rate(container_cpu_usage_seconds_total{namespace="devops-demo", container="devops-demo"}[5m])) /
+          (kube_pod_container_resource_limits{namespace="devops-demo", container="devops-demo", resource="cpu"}) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.pod }}"
+          description: "Pod {{ $labels.pod }} CPU usage is above 85% of its limit for 10 minutes. Current: {{ $value | printf \"%.1f\" }}%"
+
+      - alert: HighMemoryUsage
+        expr: |
+          container_memory_working_set_bytes{namespace="devops-demo", container="devops-demo"} /
+          kube_pod_container_resource_limits{namespace="devops-demo", container="devops-demo", resource="memory"} * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.pod }}"
+          description: "Pod {{ $labels.pod }} memory usage is above 85% of its limit. Current: {{ $value | printf \"%.1f\" }}%"
+
+      # ==========================================
+      # Application Metrics
+      # ==========================================
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(devops_demo_http_request_errors_total{status_code=~"5.."}[5m])) /
+          sum(rate(devops_demo_http_requests_total[5m])) * 100 > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "More than 1% of requests are returning 5xx errors. Current: {{ $value | printf \"%.2f\" }}%"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(devops_demo_http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency"
+          description: "95th percentile latency is above 1 second. Current: {{ $value | printf \"%.2f\" }}s"
+
+      # ==========================================
+      # Deployment
+      # ==========================================
+      - alert: DeploymentReplicasMismatch
+        expr: |
+          kube_deployment_spec_replicas{namespace="devops-demo"} !=
+          kube_deployment_status_available_replicas{namespace="devops-demo"}
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Deployment {{ $labels.deployment }} replica mismatch"
+          description: "Deployment {{ $labels.deployment }} has not matched desired replica count for 10 minutes."
+
+      - alert: DeploymentRolloutStuck
+        expr: |
+          kube_deployment_status_observed_generation{namespace="devops-demo"} !=
+          kube_deployment_metadata_generation{namespace="devops-demo"}
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Deployment rollout is stuck"
+          description: "Deployment {{ $labels.deployment }} rollout has been stuck for 15 minutes."
+
+      # ==========================================
+      # Health Check
+      # ==========================================
+      - alert: HealthCheckFailing
+        expr: up{job="devops-demo"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Application health check failing"
+          description: "Instance {{ $labels.instance }} has been unreachable for more than 2 minutes."

@@ -1,0 +1,71 @@
+# Pod Security Standards — Restricted Profile
+# Applied at namespace level via labels (see namespace.yaml)
+#
+# This file documents the security baseline enforced on all pods
+# in the devops-demo namespace. Kubernetes 1.25+ uses Pod Security
+# Admission instead of PodSecurityPolicy.
+#
+# Enforcement is done via namespace labels:
+#   pod-security.kubernetes.io/enforce: restricted
+#   pod-security.kubernetes.io/audit: restricted
+#   pod-security.kubernetes.io/warn: restricted
+#
+# The "restricted" profile requires:
+#   ✅ runAsNonRoot: true
+#   ✅ allowPrivilegeEscalation: false
+#   ✅ seccompProfile: RuntimeDefault or Localhost
+#   ✅ capabilities.drop: ["ALL"]
+#   ❌ No hostNetwork, hostPID, hostIPC
+#   ❌ No privileged containers
+#   ❌ No hostPath volumes
+#   ❌ No writable root filesystem (recommended)
+#
+# Reference: https://kubernetes.io/docs/concepts/security/pod-security-standards/
+
+---
+# Additional security hardening via ResourceQuota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: devops-demo-quota
+  namespace: devops-demo
+  labels:
+    app.kubernetes.io/name: devops-demo
+spec:
+  hard:
+    # Limit total resource consumption in the namespace
+    requests.cpu: "4"
+    requests.memory: 4Gi
+    limits.cpu: "8"
+    limits.memory: 8Gi
+    # Limit number of objects
+    pods: "20"
+    services: "5"
+    secrets: "10"
+    configmaps: "10"
+    persistentvolumeclaims: "5"
+
+---
+# LimitRange for default resource constraints
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: devops-demo-limits
+  namespace: devops-demo
+  labels:
+    app.kubernetes.io/name: devops-demo
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 256Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      max:
+        cpu: "2"
+        memory: 1Gi
+      min:
+        cpu: 50m
+        memory: 32Mi
