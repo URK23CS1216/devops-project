@@ -1,718 +1,591 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DevOps Demo - Production-grade deployment pipeline dashboard">
-  <title>DevOps Demo — Pipeline Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DevOps Demo — CI/CD Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#090e1a;--surface:#0d1526;--surface2:#111d35;--surface3:#162244;
+  --green:#00ff88;--cyan:#00d4ff;--amber:#ffb800;--red:#ff4d6a;--purple:#a78bfa;
+  --text:#e2e8f0;--muted:#64748b;--border:#1e3056;
+  --glow-g:0 0 20px rgba(0,255,136,.15);--glow-c:0 0 20px rgba(0,212,255,.15);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;overflow-x:hidden}
+code,pre,.mono{font-family:'JetBrains Mono',monospace}
 
-    :root {
-      --bg-primary: #0a0e1a;
-      --bg-secondary: #111827;
-      --bg-card: rgba(17, 24, 39, 0.7);
-      --bg-card-hover: rgba(30, 41, 59, 0.8);
-      --border: rgba(99, 102, 241, 0.15);
-      --border-hover: rgba(99, 102, 241, 0.4);
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --accent-indigo: #6366f1;
-      --accent-purple: #a855f7;
-      --accent-cyan: #06b6d4;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-rose: #f43f5e;
-      --gradient-primary: linear-gradient(135deg, #6366f1, #a855f7);
-      --gradient-success: linear-gradient(135deg, #10b981, #06b6d4);
-      --gradient-warm: linear-gradient(135deg, #f59e0b, #f43f5e);
-      --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
-      --radius: 16px;
-      --radius-sm: 10px;
-    }
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(9,14,26,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px}
+.nav-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1rem;color:var(--green);letter-spacing:-.02em}
+.nav-brand span{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;box-shadow:var(--glow-g)}
+.nav-links{display:flex;gap:1.5rem}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:.85rem;transition:color .2s}
+.nav-links a:hover{color:var(--cyan)}
+.nav-badge{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--green);padding:4px 12px;border-radius:20px;font-size:.75rem;font-family:'JetBrains Mono',monospace}
 
-    /* Animated background */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(99, 102, 241, 0.08), transparent),
-        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(168, 85, 247, 0.06), transparent),
-        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.05), transparent);
-      pointer-events: none;
-      z-index: 0;
-    }
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6rem 2rem 4rem;position:relative;overflow:hidden}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:40px 40px;z-index:0}
+.hero-glow{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,255,136,.05) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);z-index:0}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:860px}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);color:var(--green);padding:6px 16px;border-radius:20px;font-size:.8rem;margin-bottom:2rem;font-family:'JetBrains Mono',monospace}
+.hero-tag::before{content:'▶';font-size:.7rem}
+h1{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:700;line-height:1.1;letter-spacing:-.04em;margin-bottom:1.5rem}
+h1 .accent-g{color:var(--green)}
+h1 .accent-c{color:var(--cyan)}
+.hero-desc{font-size:1.1rem;color:var(--muted);max-width:600px;margin:0 auto 2.5rem;line-height:1.7;font-weight:300}
+.hero-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:3rem}
+.btn{padding:11px 24px;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px;border:none}
+.btn-primary{background:var(--green);color:#090e1a}
+.btn-primary:hover{box-shadow:var(--glow-g);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+.tech-badges{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:1rem}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:6px;font-size:.75rem;font-family:'JetBrains Mono',monospace;border:1px solid}
+.badge-node{background:rgba(104,211,145,.08);border-color:rgba(104,211,145,.3);color:#68d391}
+.badge-docker{background:rgba(0,150,255,.08);border-color:rgba(0,150,255,.3);color:#60a5fa}
+.badge-k8s{background:rgba(50,108,229,.08);border-color:rgba(50,108,229,.3);color:#818cf8}
+.badge-helm{background:rgba(15,157,88,.08);border-color:rgba(15,157,88,.3);color:#34d399}
+.badge-argo{background:rgba(239,123,77,.08);border-color:rgba(239,123,77,.3);color:#fb923c}
+.badge-prom{background:rgba(230,82,44,.08);border-color:rgba(230,82,44,.3);color:#f87171}
+.badge-grafana{background:rgba(244,104,0,.08);border-color:rgba(244,104,0,.3);color:#fdba74}
 
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 2rem;
-      position: relative;
-      z-index: 1;
-    }
+/* PIPELINE VIZ */
+.pipeline-section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--green);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.5rem}
+.section-title{font-size:1.9rem;font-weight:700;letter-spacing:-.03em;margin-bottom:.5rem}
+.section-sub{color:var(--muted);font-size:.95rem;margin-bottom:3rem;font-weight:300}
+.pipeline-flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0;margin-bottom:3rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;position:relative;overflow:hidden}
+.pipeline-flow::before{content:'CI/CD PIPELINE';position:absolute;top:12px;left:20px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:.1em}
+.pipe-stage{display:flex;flex-direction:column;align-items:center;gap:8px;padding:1rem 1.2rem;border-radius:10px;border:1px solid var(--border);background:var(--surface2);min-width:90px;cursor:default;transition:all .3s;position:relative}
+.pipe-stage:hover{border-color:var(--green);box-shadow:var(--glow-g)}
+.pipe-stage.active{border-color:var(--green);animation:stage-pulse 2s infinite}
+.pipe-icon{font-size:1.3rem}
+.pipe-name{font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);text-align:center}
+.pipe-status{width:8px;height:8px;border-radius:50%;position:absolute;top:8px;right:8px}
+.status-pass{background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-build{background:var(--amber);animation:pulse 1s infinite}
+.pipe-arrow{color:var(--border);font-size:1.2rem;margin:0 .3rem;align-self:center}
 
-    /* Header */
-    .header {
-      text-align: center;
-      margin-bottom: 3rem;
-      animation: fadeInDown 0.8s ease-out;
-    }
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:4rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;position:relative;overflow:hidden;transition:border-color .2s}
+.stat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,255,136,.03),transparent);pointer-events:none}
+.stat-card:hover{border-color:var(--cyan)}
+.stat-number{font-size:2.2rem;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
+.stat-number.green{color:var(--green)}
+.stat-number.cyan{color:var(--cyan)}
+.stat-number.amber{color:var(--amber)}
+.stat-number.purple{color:var(--purple)}
+.stat-label{font-size:.8rem;color:var(--muted);margin-top:.4rem}
+.stat-trend{font-size:.7rem;color:var(--green);margin-top:.3rem;font-family:'JetBrains Mono',monospace}
 
-    .header__badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 1rem;
-      background: rgba(99, 102, 241, 0.1);
-      border: 1px solid rgba(99, 102, 241, 0.2);
-      border-radius: 50px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--accent-indigo);
-      margin-bottom: 1.5rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
+/* FEATURES */
+.features-section{padding:5rem 2rem;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.features-inner{max-width:1100px;margin:0 auto}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--border);border-radius:16px;overflow:hidden}
+.feat-card{background:var(--surface2);padding:1.8rem;transition:background .2s;position:relative}
+.feat-card:hover{background:var(--surface3)}
+.feat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:1rem}
+.feat-icon.g{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.2)}
+.feat-icon.c{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2)}
+.feat-icon.a{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.2)}
+.feat-icon.p{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2)}
+.feat-icon.r{background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.2)}
+.feat-title{font-size:.95rem;font-weight:600;margin-bottom:.5rem}
+.feat-desc{font-size:.83rem;color:var(--muted);line-height:1.6}
+.feat-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:2px 8px;border-radius:4px;margin-top:.8rem;background:rgba(0,255,136,.08);color:var(--green);border:1px solid rgba(0,255,136,.2)}
 
-    .header__badge .pulse {
-      width: 8px;
-      height: 8px;
-      background: var(--accent-emerald);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
+/* K8S SECTION */
+.k8s-section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
+.k8s-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.k8s-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem}
+.k8s-card h3{font-size:1rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.k8s-card h3 .dot{width:8px;height:8px;border-radius:50%}
+.k8s-table{width:100%;border-collapse:collapse}
+.k8s-table tr{border-bottom:1px solid var(--border)}
+.k8s-table tr:last-child{border-bottom:none}
+.k8s-table td{padding:.6rem .4rem;font-size:.82rem}
+.k8s-table td:first-child{color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.75rem;width:40%}
+.k8s-table td:last-child{color:var(--muted)}
+.yaml-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;font-size:.78rem;line-height:1.7;overflow-x:auto}
+.yaml-key{color:var(--cyan)}
+.yaml-val{color:var(--green)}
+.yaml-num{color:var(--amber)}
+.yaml-comment{color:var(--muted)}
 
-    .header__title {
-      font-size: 3rem;
-      font-weight: 800;
-      background: var(--gradient-primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 0.75rem;
-      letter-spacing: -0.02em;
-    }
+/* MONITORING */
+.monitoring-section{padding:5rem 2rem;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.monitoring-inner{max-width:1100px;margin:0 auto}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:3rem}
+.metric-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1.2rem}
+.metric-name{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);margin-bottom:.5rem}
+.metric-value{font-size:1.5rem;font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:.3rem}
+.mini-chart{height:36px;display:flex;align-items:flex-end;gap:3px;margin-top:.6rem}
+.bar{flex:1;border-radius:2px 2px 0 0;min-height:3px;transition:height .5s}
 
-    .header__subtitle {
-      font-size: 1.1rem;
-      color: var(--text-secondary);
-      font-weight: 400;
-      max-width: 600px;
-      margin: 0 auto;
-      line-height: 1.6;
-    }
+/* ALERTS */
+.alerts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem}
+.alert-row{display:flex;align-items:center;gap:12px;padding:.8rem 1rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;border-left:3px solid}
+.alert-row.crit{border-left-color:var(--red)}
+.alert-row.warn{border-left-color:var(--amber)}
+.alert-icon{font-size:.9rem}
+.alert-info{flex:1}
+.alert-title{font-size:.82rem;font-weight:600}
+.alert-cond{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.sev-badge{font-size:.65rem;padding:2px 8px;border-radius:20px;font-family:'JetBrains Mono',monospace}
+.sev-crit{background:rgba(255,77,106,.15);color:var(--red);border:1px solid rgba(255,77,106,.3)}
+.sev-warn{background:rgba(255,184,0,.12);color:var(--amber);border:1px solid rgba(255,184,0,.3)}
 
-    /* Status Bar */
-    .status-bar {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      margin-bottom: 3rem;
-      animation: fadeInUp 0.8s ease-out 0.2s both;
-      flex-wrap: wrap;
-    }
+/* SECURITY */
+.security-section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
+.sec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.sec-item{display:flex;align-items:flex-start;gap:12px;padding:1.2rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;transition:border-color .2s}
+.sec-item:hover{border-color:var(--green)}
+.sec-check{width:20px;height:20px;border-radius:50%;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--green);flex-shrink:0;margin-top:2px}
+.sec-text h4{font-size:.85rem;font-weight:600;margin-bottom:.3rem}
+.sec-text p{font-size:.75rem;color:var(--muted);line-height:1.5}
 
-    .status-item {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 0.6rem 1.2rem;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 50px;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-    }
+/* API */
+.api-section{padding:5rem 2rem;background:var(--surface);border-top:1px solid var(--border)}
+.api-inner{max-width:1100px;margin:0 auto}
+.api-table{width:100%;border-collapse:collapse;margin-top:1.5rem}
+.api-table th{text-align:left;padding:.7rem 1rem;font-size:.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.08em;border-bottom:1px solid var(--border);font-weight:400}
+.api-table td{padding:.75rem 1rem;font-size:.83rem;border-bottom:1px solid rgba(30,48,86,.5)}
+.api-table tr:hover td{background:var(--surface2)}
+.method{font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:2px 8px;border-radius:4px;font-weight:500}
+.get{background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.25)}
+.endpoint{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--green)}
 
-    .status-item:hover {
-      border-color: var(--border-hover);
-      transform: translateY(-1px);
-    }
+/* QUICK START */
+.quickstart-section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
+.qs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.qs-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.qs-head{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface2)}
+.qs-head .num{width:24px;height:24px;border-radius:50%;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--green);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace}
+.qs-head h3{font-size:.9rem;font-weight:600}
+.qs-body{padding:1.2rem}
+.terminal{background:var(--bg);border-radius:8px;padding:1rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.8;overflow-x:auto}
+.cmd::before{content:'$ ';color:var(--green)}
+.comment{color:var(--muted)}
 
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:.82rem;background:var(--surface)}
+footer strong{color:var(--text)}
+footer .links{display:flex;justify-content:center;gap:1.5rem;margin-top:.8rem}
+footer .links a{color:var(--muted);text-decoration:none;transition:color .2s;font-size:.8rem}
+footer .links a:hover{color:var(--cyan)}
 
-    .status-dot.green { background: var(--accent-emerald); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
-    .status-dot.blue { background: var(--accent-cyan); box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
-    .status-dot.purple { background: var(--accent-purple); box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+/* ANIMATIONS */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes stage-pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0)}50%{box-shadow:0 0 12px 2px rgba(0,255,136,.2)}}
+@keyframes fade-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fade-up .6s ease forwards}
 
-    .status-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
+/* SCROLLED */
+.scroll-reveal{opacity:0;transform:translateY(16px);transition:opacity .5s,transform .5s}
+.scroll-reveal.visible{opacity:1;transform:none}
 
-    /* Cards Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.75rem;
-      backdrop-filter: blur(12px);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      opacity: 0;
-      transition: opacity 0.4s ease;
-    }
-
-    .card:hover {
-      border-color: var(--border-hover);
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-glow);
-    }
-
-    .card:hover::before { opacity: 1; }
-
-    .card--indigo::before { background: var(--gradient-primary); }
-    .card--emerald::before { background: var(--gradient-success); }
-    .card--amber::before { background: var(--gradient-warm); }
-    .card--cyan::before { background: linear-gradient(135deg, #06b6d4, #6366f1); }
-
-    .card__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-    }
-
-    .card__title {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .card__icon {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius-sm);
-      font-size: 1.2rem;
-    }
-
-    .card__icon--indigo { background: rgba(99, 102, 241, 0.15); }
-    .card__icon--emerald { background: rgba(16, 185, 129, 0.15); }
-    .card__icon--amber { background: rgba(245, 158, 11, 0.15); }
-    .card__icon--cyan { background: rgba(6, 182, 212, 0.15); }
-
-    .card__badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 50px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-    }
-
-    .badge--green { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
-    .badge--blue { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
-    .badge--amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
-
-    /* Metrics */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-    }
-
-    .metric {
-      padding: 1rem;
-      border-radius: var(--radius-sm);
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      transition: all 0.3s ease;
-    }
-
-    .metric:hover {
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(255, 255, 255, 0.08);
-    }
-
-    .metric__value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 0.25rem;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .metric__value--indigo { color: var(--accent-indigo); }
-    .metric__value--emerald { color: var(--accent-emerald); }
-    .metric__value--cyan { color: var(--accent-cyan); }
-    .metric__value--amber { color: var(--accent-amber); }
-
-    .metric__label {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    /* Pipeline stages */
-    .pipeline {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .pipeline__stage {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-sm);
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      transition: all 0.3s ease;
-    }
-
-    .pipeline__stage:hover {
-      background: rgba(255, 255, 255, 0.04);
-    }
-
-    .pipeline__number {
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      font-size: 0.75rem;
-      font-weight: 700;
-      background: rgba(99, 102, 241, 0.15);
-      color: var(--accent-indigo);
-      flex-shrink: 0;
-    }
-
-    .pipeline__stage-name { font-size: 0.9rem; font-weight: 500; flex: 1; }
-    .pipeline__status { font-size: 0.8rem; font-weight: 600; }
-    .pipeline__status.pass { color: var(--accent-emerald); }
-    .pipeline__status.running { color: var(--accent-amber); animation: pulse 1.5s infinite; }
-
-    /* Endpoint list */
-    .endpoint-list { display: flex; flex-direction: column; gap: 0.6rem; }
-
-    .endpoint {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.7rem 1rem;
-      border-radius: var(--radius-sm);
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .endpoint:hover {
-      background: rgba(99, 102, 241, 0.08);
-      border-color: rgba(99, 102, 241, 0.2);
-    }
-
-    .endpoint__method {
-      padding: 0.15rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--accent-emerald);
-      letter-spacing: 0.05em;
-      margin-right: 0.75rem;
-    }
-
-    .endpoint__path { font-size: 0.88rem; font-weight: 500; font-family: 'Courier New', monospace; flex: 1; }
-    .endpoint__arrow { color: var(--text-muted); font-size: 0.9rem; transition: transform 0.3s ease; }
-    .endpoint:hover .endpoint__arrow { transform: translateX(4px); color: var(--accent-indigo); }
-
-    /* Tech stack */
-    .tech-stack { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-
-    .tech-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.45rem 0.9rem;
-      border-radius: 50px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      transition: all 0.3s ease;
-    }
-
-    .tech-tag:hover {
-      background: rgba(99, 102, 241, 0.1);
-      border-color: rgba(99, 102, 241, 0.25);
-      transform: translateY(-2px);
-    }
-
-    .tech-tag__dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-    }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: 2rem;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      animation: fadeInUp 0.8s ease-out 0.8s both;
-    }
-
-    .footer a {
-      color: var(--accent-indigo);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .footer a:hover { text-decoration: underline; }
-
-    /* Animations */
-    @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .card { animation: fadeInUp 0.6s ease-out both; }
-    .card:nth-child(1) { animation-delay: 0.1s; }
-    .card:nth-child(2) { animation-delay: 0.2s; }
-    .card:nth-child(3) { animation-delay: 0.3s; }
-    .card:nth-child(4) { animation-delay: 0.4s; }
-    .card:nth-child(5) { animation-delay: 0.5s; }
-    .card:nth-child(6) { animation-delay: 0.6s; }
-
-    @media (max-width: 768px) {
-      .container { padding: 1rem; }
-      .header__title { font-size: 2rem; }
-      .grid { grid-template-columns: 1fr; }
-      .status-bar { gap: 0.75rem; }
-      .metrics-grid { grid-template-columns: 1fr; }
-    }
-
-    /* Live update flash */
-    .flash { animation: flash 0.5s ease; }
-    @keyframes flash {
-      0% { background: rgba(99, 102, 241, 0.1); }
-      100% { background: transparent; }
-    }
-  </style>
+@media(max-width:700px){
+  .k8s-grid{grid-template-columns:1fr}
+  nav .nav-links{display:none}
+  h1{font-size:2rem}
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <div class="header__badge">
-        <span class="pulse"></span>
-        Live Dashboard
-      </div>
-      <h1 class="header__title">DevOps Pipeline</h1>
-      <p class="header__subtitle">
-        End-to-end CI/CD pipeline with Kubernetes orchestration, GitOps delivery, and full-stack observability
-      </p>
-    </header>
 
-    <!-- Status Bar -->
-    <div class="status-bar">
-      <div class="status-item">
-        <span class="status-dot green"></span>
-        <span class="status-label" id="app-status">Application Healthy</span>
-      </div>
-      <div class="status-item">
-        <span class="status-dot blue"></span>
-        <span class="status-label" id="cluster-status">Cluster Connected</span>
-      </div>
-      <div class="status-item">
-        <span class="status-dot purple"></span>
-        <span class="status-label" id="pipeline-status">Pipeline Active</span>
-      </div>
+<!-- NAV -->
+<nav>
+  <div class="nav-brand"><span></span>devops-demo</div>
+  <div class="nav-links">
+    <a href="#pipeline">Pipeline</a>
+    <a href="#kubernetes">Kubernetes</a>
+    <a href="#monitoring">Monitoring</a>
+    <a href="#security">Security</a>
+    <a href="#api">API</a>
+  </div>
+  <div class="nav-badge">v1.0.0 · live</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-content fade-in">
+    <div class="hero-tag">Production-Grade DevOps Pipeline</div>
+    <h1>End-to-End <span class="accent-g">CI/CD</span> with<br><span class="accent-c">Kubernetes</span> Orchestration</h1>
+    <p class="hero-desc">A containerized Node.js application deployed to Kubernetes with full CI/CD automation, GitOps delivery via ArgoCD, and comprehensive observability using Prometheus &amp; Grafana.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#pipeline">▶ View Pipeline</a>
+      <a class="btn btn-ghost" href="#quickstart">⬡ Quick Start</a>
     </div>
-
-    <!-- Main Grid -->
-    <div class="grid">
-      <!-- App Health Card -->
-      <div class="card card--emerald">
-        <div class="card__header">
-          <div class="card__title">
-            <div class="card__icon card__icon--emerald">💚</div>
-            Application Health
-          </div>
-          <span class="card__badge badge--green" id="health-badge">HEALTHY</span>
-        </div>
-        <div class="metrics-grid">
-          <div class="metric">
-            <div class="metric__value metric__value--emerald" id="uptime">0s</div>
-            <div class="metric__label">Uptime</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--cyan" id="memory">0MB</div>
-            <div class="metric__label">Memory (RSS)</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--indigo" id="heap">0MB</div>
-            <div class="metric__label">Heap Used</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--amber" id="version">1.0.0</div>
-            <div class="metric__label">App Version</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CI/CD Pipeline Card -->
-      <div class="card card--indigo">
-        <div class="card__header">
-          <div class="card__title">
-            <div class="card__icon card__icon--indigo">🔄</div>
-            CI/CD Pipeline
-          </div>
-          <span class="card__badge badge--green">PASSING</span>
-        </div>
-        <div class="pipeline">
-          <div class="pipeline__stage">
-            <span class="pipeline__number">1</span>
-            <span class="pipeline__stage-name">Lint & Validate</span>
-            <span class="pipeline__status pass">✓ Pass</span>
-          </div>
-          <div class="pipeline__stage">
-            <span class="pipeline__number">2</span>
-            <span class="pipeline__stage-name">Unit Tests</span>
-            <span class="pipeline__status pass">✓ Pass</span>
-          </div>
-          <div class="pipeline__stage">
-            <span class="pipeline__number">3</span>
-            <span class="pipeline__stage-name">Docker Build & Push</span>
-            <span class="pipeline__status pass">✓ Pass</span>
-          </div>
-          <div class="pipeline__stage">
-            <span class="pipeline__number">4</span>
-            <span class="pipeline__stage-name">Security Scan (Trivy)</span>
-            <span class="pipeline__status pass">✓ Pass</span>
-          </div>
-          <div class="pipeline__stage">
-            <span class="pipeline__number">5</span>
-            <span class="pipeline__stage-name">Deploy to Kubernetes</span>
-            <span class="pipeline__status pass">✓ Synced</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Kubernetes Status Card -->
-      <div class="card card--cyan">
-        <div class="card__header">
-          <div class="card__title">
-            <div class="card__icon card__icon--cyan">☸️</div>
-            Kubernetes Cluster
-          </div>
-          <span class="card__badge badge--blue">RUNNING</span>
-        </div>
-        <div class="metrics-grid">
-          <div class="metric">
-            <div class="metric__value metric__value--cyan" id="pods">3/3</div>
-            <div class="metric__label">Pods Ready</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--emerald" id="replicas">3</div>
-            <div class="metric__label">Replicas</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--indigo" id="cpu-usage">24%</div>
-            <div class="metric__label">CPU Usage</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--amber" id="mem-usage">41%</div>
-            <div class="metric__label">Memory Usage</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Deployment Info Card -->
-      <div class="card card--amber">
-        <div class="card__header">
-          <div class="card__title">
-            <div class="card__icon card__icon--amber">🚀</div>
-            Deployment
-          </div>
-          <span class="card__badge badge--amber">ROLLING</span>
-        </div>
-        <div class="metrics-grid">
-          <div class="metric">
-            <div class="metric__value metric__value--amber" id="strategy">Rolling</div>
-            <div class="metric__label">Strategy</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--emerald" id="image-tag">latest</div>
-            <div class="metric__label">Image Tag</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--indigo" id="namespace">devops-demo</div>
-            <div class="metric__label">Namespace</div>
-          </div>
-          <div class="metric">
-            <div class="metric__value metric__value--cyan" id="hostname">—</div>
-            <div class="metric__label">Pod Hostname</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- API Endpoints Card -->
-      <div class="card card--indigo">
-        <div class="card__header">
-          <div class="card__title">
-            <div class="card__icon card__icon--indigo">🌐</div>
-            API Endpoints
-          </div>
-        </div>
-        <div class="endpoint-list">
-          <a href="/api/health" class="endpoint" id="endpoint-health">
-            <span class="endpoint__method">GET</span>
-            <span class="endpoint__path">/api/health</span>
-            <span class="endpoint__arrow">→</span>
-          </a>
-          <a href="/api/health/ready" class="endpoint" id="endpoint-ready">
-            <span class="endpoint__method">GET</span>
-            <span class="endpoint__path">/api/health/ready</span>
-            <span class="endpoint__arrow">→</span>
-          </a>
-          <a href="/api/health/live" class="endpoint" id="endpoint-live">
-            <span class="endpoint__method">GET</span>
-            <span class="endpoint__path">/api/health/live</span>
-            <span class="endpoint__arrow">→</span>
-          </a>
-          <a href="/api/info" class="endpoint" id="endpoint-info">
-            <span class="endpoint__method">GET</span>
-            <span class="endpoint__path">/api/info</span>
-            <span class="endpoint__arrow">→</span>
-          </a>
-          <a href="/metrics" class="endpoint" id="endpoint-metrics">
-            <span class="endpoint__method">GET</span>
-            <span class="endpoint__path">/metrics</span>
-            <span class="endpoint__arrow">→</span>
-          </a>
-        </div>
-      </div>
-
-      <!-- Tech Stack Card -->
-      <div class="card card--emerald">
-        <div class="card__header">
-          <div class="card__title">
-            <div class="card__icon card__icon--emerald">🛠️</div>
-            Tech Stack
-          </div>
-        </div>
-        <div class="tech-stack">
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#68a063"></span> Node.js</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#2496ed"></span> Docker</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#326ce5"></span> Kubernetes</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#0f9d58"></span> Helm</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#ef7b4d"></span> ArgoCD</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#e6522c"></span> Prometheus</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#f46800"></span> Grafana</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#2088ff"></span> GitHub Actions</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#4db33d"></span> Loki</div>
-          <div class="tech-tag"><span class="tech-tag__dot" style="background:#7b42bc"></span> Trivy</div>
-        </div>
-      </div>
+    <div class="tech-badges">
+      <span class="badge badge-node">⬡ Node.js 20</span>
+      <span class="badge badge-docker">🐳 Docker</span>
+      <span class="badge badge-k8s">☸ Kubernetes</span>
+      <span class="badge badge-helm">⎈ Helm</span>
+      <span class="badge badge-argo">Argo ArgoCD</span>
+      <span class="badge badge-prom">⬡ Prometheus</span>
+      <span class="badge badge-grafana">▣ Grafana</span>
     </div>
+  </div>
+</section>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <p>DevOps Demo v<span id="footer-version">1.0.0</span> · Built with
-        <a href="https://nodejs.org" target="_blank">Node.js</a> ·
-        Deployed via <a href="https://kubernetes.io" target="_blank">Kubernetes</a> ·
-        Monitored by <a href="https://prometheus.io" target="_blank">Prometheus</a>
-      </p>
-    </footer>
+<!-- PIPELINE SECTION -->
+<section class="pipeline-section scroll-reveal" id="pipeline">
+  <div class="section-label">CI/CD Pipeline</div>
+  <div class="section-title">Automated from Push to Deploy</div>
+  <p class="section-sub">Every code push triggers a full pipeline: lint → test → build → scan → deploy. Zero manual steps.</p>
+
+  <div class="pipeline-flow">
+    <div class="pipe-stage"><div class="pipe-icon">👨‍💻</div><div class="pipe-name">Developer</div><div class="pipe-status status-pass"></div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage"><div class="pipe-icon">🔀</div><div class="pipe-name">GitHub Push</div><div class="pipe-status status-pass"></div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage"><div class="pipe-icon">✏️</div><div class="pipe-name">Lint</div><div class="pipe-status status-pass"></div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage"><div class="pipe-icon">🧪</div><div class="pipe-name">Test</div><div class="pipe-status status-pass"></div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage active"><div class="pipe-icon">🔨</div><div class="pipe-name">Build</div><div class="pipe-status status-build"></div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage"><div class="pipe-icon">🔍</div><div class="pipe-name">Trivy Scan</div><div class="pipe-status status-pass"></div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage"><div class="pipe-icon">🐳</div><div class="pipe-name">Docker Hub</div><div class="pipe-status status-pass"></div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage"><div class="pipe-icon">⎈</div><div class="pipe-name">Helm Update</div><div class="pipe-status status-pass"></div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage"><div class="pipe-icon">☸</div><div class="pipe-name">Kubernetes</div><div class="pipe-status status-pass"></div></div>
   </div>
 
-  <script>
-    // Live data fetching
-    async function fetchHealth() {
-      try {
-        const res = await fetch('/api/health');
-        const data = await res.json();
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-number green">~80MB</div><div class="stat-label">Docker image size (multi-stage)</div><div class="stat-trend">↓ optimized</div></div>
+    <div class="stat-card"><div class="stat-number cyan">3</div><div class="stat-label">Default replica count</div><div class="stat-trend">↑ scales to 10 via HPA</div></div>
+    <div class="stat-card"><div class="stat-number amber">0</div><div class="stat-label">Max unavailable during rollout</div><div class="stat-trend">✓ zero downtime</div></div>
+    <div class="stat-card"><div class="stat-number purple">100%</div><div class="stat-label">GitOps via ArgoCD auto-sync</div><div class="stat-trend">✓ self-heal enabled</div></div>
+  </div>
+</section>
 
-        document.getElementById('uptime').textContent = data.uptimeFormatted;
-        document.getElementById('memory').textContent = data.checks.memory.rss;
-        document.getElementById('heap').textContent = data.checks.memory.heapUsed;
-        document.getElementById('health-badge').textContent = data.status === 'ok' ? 'HEALTHY' : 'DEGRADED';
+<!-- FEATURES -->
+<section class="features-section scroll-reveal" id="features">
+  <div class="features-inner">
+    <div class="section-label">Features</div>
+    <div class="section-title">Everything production needs</div>
+    <p class="section-sub">From container security to auto-scaling — every layer is covered.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon g">📦</div>
+        <div class="feat-title">Multi-Stage Docker Build</div>
+        <div class="feat-desc">Non-root user (UID 1001), read-only filesystem, all Linux capabilities dropped. Final image ~80MB.</div>
+        <div class="feat-tag">Containerization</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon c">⚙️</div>
+        <div class="feat-title">GitHub Actions CI</div>
+        <div class="feat-desc">ESLint + Hadolint for lint, Jest with coverage for tests, Trivy for vulnerability scanning. Blocks on CRITICAL/HIGH CVEs.</div>
+        <div class="feat-tag">CI Pipeline</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon a">🔄</div>
+        <div class="feat-title">ArgoCD GitOps CD</div>
+        <div class="feat-desc">Auto-sync detects Helm value changes, self-heal reverts manual cluster changes, prune removes orphaned resources.</div>
+        <div class="feat-tag">CD Pipeline</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon p">⬆️</div>
+        <div class="feat-title">HPA Autoscaling</div>
+        <div class="feat-desc">Scales 2–10 pods automatically when CPU exceeds 70% or Memory exceeds 80% using Kubernetes HorizontalPodAutoscaler.</div>
+        <div class="feat-tag">Orchestration</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon r">📊</div>
+        <div class="feat-title">Prometheus + Grafana</div>
+        <div class="feat-desc">Custom metrics: request counter, latency histogram (p50/p95/p99), error counter, active connections gauge, Node.js GC stats.</div>
+        <div class="feat-tag">Monitoring</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon g">📋</div>
+        <div class="feat-title">Loki Log Aggregation</div>
+        <div class="feat-desc">Promtail ships structured Winston logs to Loki. Queryable in Grafana alongside metrics for full observability correlation.</div>
+        <div class="feat-tag">Logging</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon c">⎈</div>
+        <div class="feat-title">Helm Chart</div>
+        <div class="feat-desc">Fully templated chart with dev/prod value overrides. Manages Deployment, Service, Ingress, HPA, ConfigMap, Secrets, RBAC.</div>
+        <div class="feat-tag">Packaging</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon a">🔐</div>
+        <div class="feat-title">HashiCorp Vault</div>
+        <div class="feat-desc">External Secrets Operator integration syncs secrets from Vault into Kubernetes Secrets. Dev mode installed via Helm.</div>
+        <div class="feat-tag">Secrets</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon p">🌐</div>
+        <div class="feat-title">NGINX Ingress</div>
+        <div class="feat-desc">Rate limiting enforced at ingress layer. NetworkPolicy restricts pod-to-pod communication. ResourceQuota caps namespace usage.</div>
+        <div class="feat-tag">Networking</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-        // Flash animation on update
-        document.getElementById('uptime').closest('.metric').classList.add('flash');
-        setTimeout(() => {
-          document.getElementById('uptime').closest('.metric').classList.remove('flash');
-        }, 500);
-      } catch (err) {
-        document.getElementById('health-badge').textContent = 'ERROR';
-        document.getElementById('health-badge').className = 'card__badge badge--amber';
-      }
-    }
+<!-- KUBERNETES -->
+<section class="k8s-section scroll-reveal" id="kubernetes">
+  <div class="section-label">Kubernetes</div>
+  <div class="section-title">Deployment Strategy</div>
+  <p class="section-sub">Rolling update with zero downtime — no pod is terminated until its replacement is healthy.</p>
+  <div class="k8s-grid">
+    <div class="k8s-card">
+      <h3><span class="dot" style="background:var(--green)"></span>Zero-Downtime Rolling Update</h3>
+      <div class="yaml-block">
+        <div><span class="yaml-key">strategy</span>:</div>
+        <div>&nbsp;&nbsp;<span class="yaml-key">type</span>: <span class="yaml-val">RollingUpdate</span></div>
+        <div>&nbsp;&nbsp;<span class="yaml-key">rollingUpdate</span>:</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">maxSurge</span>: <span class="yaml-num">1</span> <span class="yaml-comment"># +1 new pod added first</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">maxUnavailable</span>: <span class="yaml-num">0</span> <span class="yaml-comment"># never reduce below desired</span></div>
+        <div><span class="yaml-key">minReadySeconds</span>: <span class="yaml-num">10</span> <span class="yaml-comment"># wait before continuing</span></div>
+        <div><span class="yaml-key">replicas</span>: <span class="yaml-num">3</span> <span class="yaml-comment"># default replica count</span></div>
+      </div>
+    </div>
+    <div class="k8s-card">
+      <h3><span class="dot" style="background:var(--cyan)"></span>K8s Resources</h3>
+      <table class="k8s-table">
+        <tr><td>Deployment</td><td>3 replicas, rolling update strategy</td></tr>
+        <tr><td>Service</td><td>ClusterIP on port 80</td></tr>
+        <tr><td>Ingress</td><td>NGINX with rate limiting</td></tr>
+        <tr><td>HPA</td><td>Auto-scale 2–10 pods (CPU/Memory)</td></tr>
+        <tr><td>ConfigMap</td><td>Environment configuration</td></tr>
+        <tr><td>Secret</td><td>API keys, passwords (Vault)</td></tr>
+        <tr><td>NetworkPolicy</td><td>Restrict pod communication</td></tr>
+        <tr><td>RBAC</td><td>Least-privilege ServiceAccount</td></tr>
+      </table>
+    </div>
+    <div class="k8s-card">
+      <h3><span class="dot" style="background:var(--amber)"></span>HPA Configuration</h3>
+      <div class="yaml-block">
+        <div><span class="yaml-key">minReplicas</span>: <span class="yaml-num">2</span></div>
+        <div><span class="yaml-key">maxReplicas</span>: <span class="yaml-num">10</span></div>
+        <div><span class="yaml-key">metrics</span>:</div>
+        <div>&nbsp;&nbsp;<span class="yaml-comment"># Scale when CPU &gt; 70%</span></div>
+        <div>&nbsp;&nbsp;<span class="yaml-key">- type</span>: <span class="yaml-val">Resource</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">resource</span>: <span class="yaml-val">cpu</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">target</span>: <span class="yaml-num">70</span><span class="yaml-val">%</span></div>
+        <div>&nbsp;&nbsp;<span class="yaml-comment"># Scale when Memory &gt; 80%</span></div>
+        <div>&nbsp;&nbsp;<span class="yaml-key">- type</span>: <span class="yaml-val">Resource</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">resource</span>: <span class="yaml-val">memory</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">target</span>: <span class="yaml-num">80</span><span class="yaml-val">%</span></div>
+      </div>
+    </div>
+    <div class="k8s-card">
+      <h3><span class="dot" style="background:var(--purple)"></span>Helm Environments</h3>
+      <table class="k8s-table">
+        <tr><td>values.yaml</td><td>Default base values</td></tr>
+        <tr><td>values-dev.yaml</td><td>Dev overrides (namespace: devops-demo-dev)</td></tr>
+        <tr><td>values-prod.yaml</td><td>Prod overrides (higher replicas, limits)</td></tr>
+        <tr><td>Chart.yaml</td><td>Chart metadata and version</td></tr>
+        <tr><td>templates/</td><td>All K8s manifest templates</td></tr>
+        <tr><td>argocd/</td><td>GitOps sync configuration</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
 
-    async function fetchInfo() {
-      try {
-        const res = await fetch('/api/info');
-        const data = await res.json();
+<!-- MONITORING -->
+<section class="monitoring-section scroll-reveal" id="monitoring">
+  <div class="monitoring-inner">
+    <div class="section-label">Observability</div>
+    <div class="section-title">Metrics, Logs &amp; Alerts</div>
+    <p class="section-sub">Prometheus scrapes custom app metrics. Grafana visualizes. Loki aggregates logs. Alerts fire on anomalies.</p>
 
-        document.getElementById('version').textContent = data.app.version;
-        document.getElementById('footer-version').textContent = data.app.version;
-        document.getElementById('hostname').textContent = data.host.hostname.substring(0, 12);
-        document.getElementById('image-tag').textContent = data.deploy.imageTag;
-      } catch (err) {
-        console.error('Failed to fetch info:', err);
-      }
-    }
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-name">devops_demo_http_requests_total</div>
+        <div class="metric-value" style="color:var(--green)">12,847</div>
+        <div style="font-size:.75rem;color:var(--muted)">Request counter by method / route / status</div>
+        <div class="mini-chart" id="chart1"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">http_request_duration_seconds (p95)</div>
+        <div class="metric-value" style="color:var(--cyan)">48ms</div>
+        <div style="font-size:.75rem;color:var(--muted)">Latency histogram — p50 / p95 / p99</div>
+        <div class="mini-chart" id="chart2"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">devops_demo_http_request_errors_total</div>
+        <div class="metric-value" style="color:var(--amber)">0.02%</div>
+        <div style="font-size:.75rem;color:var(--muted)">5xx error rate — fires alert at &gt;1%</div>
+        <div class="mini-chart" id="chart3"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-name">devops_demo_active_connections</div>
+        <div class="metric-value" style="color:var(--purple)">243</div>
+        <div style="font-size:.75rem;color:var(--muted)">Active connection gauge (Node.js)</div>
+        <div class="mini-chart" id="chart4"></div>
+      </div>
+    </div>
 
-    // Initial fetch
-    fetchHealth();
-    fetchInfo();
+    <div class="section-label" style="margin-bottom:.8rem">Alert Rules</div>
+    <div class="alerts-grid">
+      <div class="alert-row crit"><span class="alert-icon">🔴</span><div class="alert-info"><div class="alert-title">PodCrashLooping</div><div class="alert-cond">restarts &gt; 0 in 15m</div></div><span class="sev-badge sev-crit">critical</span></div>
+      <div class="alert-row warn"><span class="alert-icon">🟡</span><div class="alert-info"><div class="alert-title">HighCPUUsage</div><div class="alert-cond">&gt;85% for 10m</div></div><span class="sev-badge sev-warn">warning</span></div>
+      <div class="alert-row warn"><span class="alert-icon">🟡</span><div class="alert-info"><div class="alert-title">HighMemoryUsage</div><div class="alert-cond">&gt;85% for 10m</div></div><span class="sev-badge sev-warn">warning</span></div>
+      <div class="alert-row crit"><span class="alert-icon">🔴</span><div class="alert-info"><div class="alert-title">HighErrorRate</div><div class="alert-cond">5xx &gt;1% for 5m</div></div><span class="sev-badge sev-crit">critical</span></div>
+      <div class="alert-row warn"><span class="alert-icon">🟡</span><div class="alert-info"><div class="alert-title">HighLatency</div><div class="alert-cond">p95 &gt;1s for 5m</div></div><span class="sev-badge sev-warn">warning</span></div>
+      <div class="alert-row crit"><span class="alert-icon">🔴</span><div class="alert-info"><div class="alert-title">DeploymentRolloutStuck</div><div class="alert-cond">no progress for 15m</div></div><span class="sev-badge sev-crit">critical</span></div>
+    </div>
+  </div>
+</section>
 
-    // Refresh every 5 seconds
-    setInterval(fetchHealth, 5000);
-    setInterval(fetchInfo, 30000);
-  </script>
+<!-- SECURITY -->
+<section class="security-section scroll-reveal" id="security">
+  <div class="section-label">Security</div>
+  <div class="section-title">Defense in Depth</div>
+  <p class="section-sub">Every layer secured — from container runtime to network policies to secret management.</p>
+  <div class="sec-grid">
+    <div class="sec-item"><div class="sec-check">✓</div><div class="sec-text"><h4>Non-Root Container</h4><p>Runs as UID 1001. Read-only filesystem. All Linux capabilities dropped.</p></div></div>
+    <div class="sec-item"><div class="sec-check">✓</div><div class="sec-text"><h4>RBAC</h4><p>Least-privilege ServiceAccount. Pod Security Standards — restricted profile enforced.</p></div></div>
+    <div class="sec-item"><div class="sec-check">✓</div><div class="sec-text"><h4>Trivy Image Scanning</h4><p>Automated CVE scanning in CI. CRITICAL/HIGH vulnerabilities block the deployment.</p></div></div>
+    <div class="sec-item"><div class="sec-check">✓</div><div class="sec-text"><h4>NetworkPolicy</h4><p>Restricts pod-to-pod communication. Only required traffic is allowed.</p></div></div>
+    <div class="sec-item"><div class="sec-check">✓</div><div class="sec-text"><h4>HashiCorp Vault</h4><p>External Secrets Operator syncs secrets from Vault. No plaintext secrets in Git.</p></div></div>
+    <div class="sec-item"><div class="sec-check">✓</div><div class="sec-text"><h4>ResourceQuota</h4><p>Namespace-level CPU, memory, and object count limits enforced.</p></div></div>
+    <div class="sec-item"><div class="sec-check">✓</div><div class="sec-text"><h4>CodeQL Scanning</h4><p>Automated static code analysis via GitHub CodeQL v4 with SARIF reporting.</p></div></div>
+    <div class="sec-item"><div class="sec-check">✓</div><div class="sec-text"><h4>Rate Limiting</h4><p>NGINX Ingress enforces per-IP rate limits. Protects against DDoS and abuse.</p></div></div>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section class="quickstart-section scroll-reveal" id="quickstart">
+  <div class="section-label">Quick Start</div>
+  <div class="section-title">Get Running in Minutes</div>
+  <p class="section-sub">Three ways to run the stack — local dev, Docker Compose full stack, or full Kubernetes.</p>
+  <div class="qs-grid">
+    <div class="qs-card">
+      <div class="qs-head"><span class="num">1</span><h3>Local Development</h3></div>
+      <div class="qs-body">
+        <div class="terminal">
+          <div class="comment"># Install dependencies</div>
+          <div class="cmd">npm install</div>
+          <div class="comment"># Run tests</div>
+          <div class="cmd">npm test</div>
+          <div class="comment"># Start dev server (auto-reload)</div>
+          <div class="cmd">npm run dev</div>
+          <div style="margin-top:.5rem;color:var(--green)"># → http://localhost:3000</div>
+        </div>
+      </div>
+    </div>
+    <div class="qs-card">
+      <div class="qs-head"><span class="num">2</span><h3>Docker Compose Stack</h3></div>
+      <div class="qs-body">
+        <div class="terminal">
+          <div class="comment"># Full stack: app + Prometheus + Grafana + Loki</div>
+          <div class="cmd">docker compose up -d --build</div>
+          <div style="margin-top:.5rem">
+            <div style="color:var(--green)">App:        http://localhost:3000</div>
+            <div style="color:var(--amber)">Prometheus: http://localhost:9090</div>
+            <div style="color:var(--purple)">Grafana:    http://localhost:3001</div>
+            <div style="color:var(--muted)">            (admin/admin)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="qs-card">
+      <div class="qs-head"><span class="num">3</span><h3>Kubernetes (Minikube)</h3></div>
+      <div class="qs-body">
+        <div class="terminal">
+          <div class="comment"># Start Minikube</div>
+          <div class="cmd">minikube start</div>
+          <div class="comment"># Build image inside Minikube</div>
+          <div class="cmd">minikube docker-env | Invoke-Expression</div>
+          <div class="cmd">docker build -t devops-demo:latest .</div>
+          <div class="comment"># Deploy with Helm</div>
+          <div class="cmd">helm upgrade --install devops-demo helm/devops-demo \</div>
+          <div style="padding-left:1rem;color:var(--text)">-f helm/devops-demo/values-dev.yaml \</div>
+          <div style="padding-left:1rem;color:var(--text)">--namespace devops-demo-dev --create-namespace</div>
+          <div class="comment"># Access the app</div>
+          <div class="cmd">kubectl port-forward svc/devops-demo 8080:80</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- API -->
+<section class="api-section scroll-reveal" id="api">
+  <div class="api-inner">
+    <div class="section-label">API Reference</div>
+    <div class="section-title">Endpoints</div>
+    <table class="api-table">
+      <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><span class="method get">GET</span></td><td class="endpoint">/</td><td>Dashboard UI</td></tr>
+        <tr><td><span class="method get">GET</span></td><td class="endpoint">/api/health</td><td>Full health check — all subsystem status</td></tr>
+        <tr><td><span class="method get">GET</span></td><td class="endpoint">/api/health/ready</td><td>Readiness probe — used by Kubernetes</td></tr>
+        <tr><td><span class="method get">GET</span></td><td class="endpoint">/api/health/live</td><td>Liveness probe — used by Kubernetes</td></tr>
+        <tr><td><span class="method get">GET</span></td><td class="endpoint">/api/info</td><td>App version, Node.js runtime, hostname</td></tr>
+        <tr><td><span class="method get">GET</span></td><td class="endpoint">/metrics</td><td>Prometheus metrics scrape endpoint</td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:3rem">
+      <div class="section-label" style="margin-bottom:.8rem">GitHub Secrets Required</div>
+      <div class="k8s-grid" style="gap:1rem">
+        <div class="k8s-card">
+          <table class="k8s-table">
+            <tr><td>DOCKERHUB_USERNAME</td><td>Your Docker Hub username</td></tr>
+            <tr><td>DOCKERHUB_TOKEN</td><td>Personal access token (Read/Write)</td></tr>
+          </table>
+          <p style="font-size:.75rem;color:var(--muted);margin-top:1rem">Set in: Settings → Secrets and variables → Actions</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <strong>DevOps Demo</strong> — End-to-End CI/CD Pipeline with Kubernetes
+  <div class="links">
+    <a href="https://github.com">GitHub</a>
+    <a href="https://hub.docker.com">Docker Hub</a>
+    <a href="https://kubernetes.io">Kubernetes Docs</a>
+    <a href="https://argo-cd.readthedocs.io">ArgoCD Docs</a>
+    <a href="#">MIT License</a>
+  </div>
+</footer>
+
+<script>
+// Mini bar charts
+function makeChart(id, vals, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const max = Math.max(...vals);
+  vals.forEach(v => {
+    const b = document.createElement('div');
+    b.className = 'bar';
+    b.style.height = Math.round((v/max)*100)+'%';
+    b.style.background = color;
+    b.style.opacity = .7;
+    el.appendChild(b);
+  });
+}
+makeChart('chart1',[40,55,48,70,63,80,72,90,85,88,95,100],'var(--green)');
+makeChart('chart2',[80,65,70,55,60,45,50,40,42,38,44,48],'var(--cyan)');
+makeChart('chart3',[2,1,3,1,2,1,1,2,1,1,1,1],'var(--amber)');
+makeChart('chart4',[60,70,80,90,85,95,100,92,88,96,90,95],'var(--purple)');
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible') });
+}, {threshold:.1});
+document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+</script>
 </body>
 </html>
