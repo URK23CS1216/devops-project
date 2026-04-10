@@ -52,6 +52,7 @@ Developer → GitHub → CI Pipeline → Docker Hub → ArgoCD → Kubernetes
 
 | Feature | Implementation |
 |---------|---------------|
+| **Premium Dashboard** | High-fidelity landing page with interactive pipeline viz |
 | **Web Application** | Node.js/Express with health checks and metrics |
 | **Containerization** | Multi-stage Docker build, non-root user, ~80MB image |
 | **CI Pipeline** | GitHub Actions: lint → test → build → scan → push |
