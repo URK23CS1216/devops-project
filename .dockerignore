@@ -3,7 +3,7 @@ npm-debug.log*
 .git
 .gitignore
 .github
-tests
+
 coverage
 docs
 k8s
@@ -14,7 +14,7 @@ security
 docker-compose*.yml
 Dockerfile
 .dockerignore
-.eslintrc.json
+
 *.md
 Makefile
 .env*
