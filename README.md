@@ -107,39 +107,39 @@ docker compose up -d --build
 ### Option 3: Kubernetes (Minikube)
 
 ```powershell
-# 1. Start Minikube
-minikube start
+### ☸️ Option 3: Local Kubernetes (Minikube)
 
-# 2. Setup Vault & External Secrets Operator
-.\security\install-vault.ps1
+For a production-like environment with full orchestration and scaling:
 
-# 3. Build the Docker Image
-# Pass Docker CLI to Minikube daemon
-minikube docker-env | Invoke-Expression
-docker build -t aldanjoseph2006/devops-demo:latest .
+1.  **Start Cluster**:
+    ```powershell
+    minikube start --driver=docker
+    ```
+2.  **Deploy with Helm**:
+    ```powershell
+    # Namespace creation
+    kubectl create namespace devops-demo-local
 
-# 4. Deploy with Helm
-.\windows-amd64\helm.exe upgrade --install devops-demo helm/devops-demo `
-    -f helm/devops-demo/values-dev.yaml `
-    --namespace devops-demo-dev --create-namespace `
-    --set image.repository=aldanjoseph2006/devops-demo `
-    --set image.tag=latest `
-    --set image.pullPolicy=IfNotPresent
-
-# 5. Port-forward to access
-kubectl port-forward svc/devops-demo 8080:80 -n devops-demo-dev
-```
+    # Installation
+    ./windows-amd64/helm.exe upgrade --install devops-demo ./helm/devops-demo `
+      --namespace devops-demo-local `
+      --values ./helm/devops-demo/values-dev.yaml `
+      --set externalSecrets.enabled=false
+    ```
+3.  **Access Dashboard**:
+    ```powershell
+    minikube service devops-demo -n devops-demo-local
+    ```
 
 ---
 
 ## 🛠️ Recent Updates
 
-- **CI/CD tag Alignment**: Fixed a mismatch between build and scan jobs by standardizing on Short SHA tags.
-- **Security Scan Hardening**: Added Docker Hub authentication to the Trivy scan job to ensure reliable image pulls.
-- **CodeQL Upgrade**: Migrated SARIF reporting to CodeQL v4 to resolve deprecation warnings.
-- **Docker Workflow Fix**: Updated `.dockerignore` to allow tests and linting during the build stage.
-- **Lockfile Management**: Removed `package-lock.json` from `.gitignore` to enable dependency caching in CI.
-- **Vault Integration**: Successfully installed HashiCorp Vault (dev mode) and External Secrets Operator.
+- **Kubernetes Integration**: Successfully deployed to local Minikube cluster using Helm.
+- **CI/CD Reliability**: 100% pipeline success reached after fixing tag mismatches and scanner auth.
+- **UI Upgrade**: Launched premium high-fidelity dashboard with interactive visualizations.
+- **Global Branding**: Synchronized all project data with the `aldanjoseph2006` namespace.
+- **CodeQL Migration**: Upgraded security reporting to CodeQL v4 for long-term support.
 
 
 
