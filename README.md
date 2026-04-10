@@ -133,10 +133,13 @@ kubectl port-forward svc/devops-demo 8080:80 -n devops-demo-dev
 
 ## 🛠️ Recent Updates
 
-- **External Secrets API**: Updated `secret.yaml` from `v1beta1` to `v1` to support newer operator versions.
-- **Repository**: Updated default storage repository to `aldanjoseph2006/devops-demo`.
+- **CI/CD tag Alignment**: Fixed a mismatch between build and scan jobs by standardizing on Short SHA tags.
+- **Security Scan Hardening**: Added Docker Hub authentication to the Trivy scan job to ensure reliable image pulls.
+- **CodeQL Upgrade**: Migrated SARIF reporting to CodeQL v4 to resolve deprecation warnings.
+- **Docker Workflow Fix**: Updated `.dockerignore` to allow tests and linting during the build stage.
+- **Lockfile Management**: Removed `package-lock.json` from `.gitignore` to enable dependency caching in CI.
 - **Vault Integration**: Successfully installed HashiCorp Vault (dev mode) and External Secrets Operator.
-- **Environment**: Fixed deployment commands to work directly with `helm.exe` as `make` is not available in the local PowerShell environment.
+
 
 
 ---
@@ -182,7 +185,19 @@ devops-demo/
 
 ---
 
+## 🔑 CI/CD Setup (GitHub Secrets)
+
+To enable the full automated pipeline, you must add the following secrets to your GitHub repository (**Settings > Secrets and variables > Actions**):
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Your Docker Hub username. |
+| `DOCKERHUB_TOKEN` | A personal access token for Docker Hub (with Read/Write permissions). |
+
+---
+
 ## 🔄 CI/CD Pipeline
+
 
 ### Continuous Integration (GitHub Actions)
 
